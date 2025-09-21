@@ -7,10 +7,12 @@
 
 
 bool validate_inn(const std::string& inn) {
-    return inn.length() == 10 && std::all_of(inn.begin(), inn.end(), [](unsigned char c) { 
+    return inn.length() == 10 && 
+           std::all_of(inn.begin(), inn.end(), [](unsigned char c) { 
                return std::isdigit(c); 
            });
 }
+
 
 ReturnType<std::string>::type
 organization_to_yaml(const std::string& instance_name, const Organization& org) {
