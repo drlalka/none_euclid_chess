@@ -18,12 +18,6 @@ private:
     size_t capacity = 0;
 
     void resize(size_t new_capacity);
-    int findWordIndex(const Word &word) const;
-    void ensureUnique(const Word &word);
-
-    void cleanup();
-    void copyFrom(const WordArray &other);
-    void moveFrom(WordArray &&other);
 
 public:
     /**
@@ -45,8 +39,7 @@ public:
      * @brief Constructor with multiple words
      * @param count Number of words
      * @param words Array of C-style strings
-     * @throws None
-     * @warning IT DOES NOT GARANTIE THE WORD ORDER
+     * @throws std::invalid_argument if word[] empty, count>0
      */
     WordArray(const size_t count, const Word words[]);
 

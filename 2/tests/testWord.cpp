@@ -5,7 +5,6 @@
 class WordTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Сбрасываем делители к состоянию по умолчанию перед каждым тестом
         Word::setDelimiters(" \t\n");
     }
 
@@ -15,7 +14,6 @@ protected:
     }
 };
 
-// Статические методы
 TEST_F(WordTest, SetDelimiters) {
     Word::setDelimiters(",;");
     Word word("hello,world;test", 0);
@@ -25,7 +23,6 @@ TEST_F(WordTest, SetDelimiters) {
     EXPECT_TRUE(compareWordToString(word2, "world"));
 }
 
-// Конструкторы
 TEST_F(WordTest, DefaultConstructor) {
     Word word;
     EXPECT_EQ(word.getSize(), 0);
@@ -67,7 +64,7 @@ TEST_F(WordTest, ConstructorFromCString_CustomDelimiters) {
 
 TEST_F(WordTest, ConstructorFromCharArray) {
     const char arr[] = {'t', 'e', 's', 't'};
-    Word word(4, arr);  // Обратите внимание: len первый параметр
+    Word word(4, arr);
     EXPECT_EQ(word.getSize(), 4);
     EXPECT_TRUE(compareWordToString(word, "test"));
 }
@@ -143,7 +140,6 @@ TEST_F(WordTest, MoveAssignment) {
     EXPECT_EQ(word1.begin(), nullptr);
 }
 
-// Операторы сравнения
 TEST_F(WordTest, ThreeWayComparison) {
     Word word1("apple");
     Word word2("banana");

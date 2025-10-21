@@ -50,7 +50,7 @@ public:
      * @param pos number of word in a str, 0 by default. if pos > real return epty word
      * @post Extracts pos'th word (ignoring leading delimiters)
      * @throws None
-     * @warning dont forget about another constructor Word(const char *arr, std::size_t len)
+     * @warning dont forget about another constructor Word(std::size_t len, const char *arr)
      */
     explicit Word(const char *str, std::size_t pos = 0);
 
@@ -75,7 +75,7 @@ public:
      * @param arr Pointer to character array
      * @param len Number of characters to copy
      * @throws std::invalid_argument if arr is nullptr
-     * @warning dont forget about another constructor Word(const char *str, std::size_t pos = 0);
+     * @warning dont forget about another constructor Word(const char *str, std::size_t pos = 0)
      */
     Word(std::size_t len, const char *arr);
 

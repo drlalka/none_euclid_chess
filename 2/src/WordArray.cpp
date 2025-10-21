@@ -30,23 +30,44 @@ WordArray::WordArray(const size_t count, const Word *words)
     {
         throw std::invalid_argument("Words array cannot be null");
     }
-
+    if (count == 0) {
+        data = nullptr;
+        size = 0;
+        capacity = 0;
+        return;
+    }
     Word *temp = new Word[count];
+    size_t unique_count = 0;
     for (size_t i = 0; i < count; ++i)
     {
-        temp[i] = words[i];
+        bool is_duplicate = false;
+        for (size_t j = 0; j < unique_count; ++j)
+        {
+            if (temp[j] == words[i])
+            {
+                is_duplicate = true;
+                break;
+            }
+        }
+        if (!is_duplicate)
+        {
+            temp[unique_count] = words[i];
+            unique_count++;
+        }
     }
-
-    std::sort(temp, temp + count);
-
-    Word *unique_end = std::unique(temp, temp + count, [](const Word &a, const Word &b)
-                                   { return (a <=> b) == std::strong_ordering::equal; });
-    size = unique_end - temp;
-    capacity = 1;
+    size = unique_count;
+    capacity = (size == 0) ? 0 : 1;
     while (capacity < size)
         capacity *= 2;
-    data = new Word[capacity];
-    std::copy(temp, unique_end, data);
+    if (size > 0)
+    {
+        data = new Word[capacity];
+        std::copy(temp, temp + size, data);
+    }
+    else
+    {
+        data = nullptr;
+    }
     delete[] temp;
 }
 
@@ -164,6 +185,7 @@ WordArray &WordArray::operator=(const WordArray &other)
     
     return *this;
 }
+
 WordArray &WordArray::operator=(WordArray &&other)
 {
     if (this != &other)
