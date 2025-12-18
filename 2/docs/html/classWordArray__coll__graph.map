@@ -1,4 +1,0 @@
-<map id="WordArray" name="WordArray">
-<area shape="rect" id="node1" title="Array of unique words with dynamic memory management." alt="" coords="5,95,96,121"/>
-<area shape="rect" id="node2" href="$classWord.html" title="Class for working with words (character strings without whitespace)" alt="" coords="23,5,78,32"/>
-</map>

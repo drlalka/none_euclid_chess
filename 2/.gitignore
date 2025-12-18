@@ -1,8 +1,11 @@
 build/
 out/
 bin/
+docs/
 *.o
 *.a
+html/
+*.png
 *.so
 *.dll
 *.exe
@@ -20,6 +23,7 @@ coverage_word.html
 *.swp
 *.swo
 *~
+*.html
 *.dylib
 *.so.*
 *.dll
