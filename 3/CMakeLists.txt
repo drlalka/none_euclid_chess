@@ -37,8 +37,10 @@ add_library(chess_lib STATIC ${CHESS_SOURCES})
 option(COVERAGE "Enable coverage" OFF)
 
 if(COVERAGE AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang"))
-    add_compile_options(--coverage)
+    add_compile_options(--coverage -O0 -g)
     add_link_options(--coverage)
+    target_compile_options(chess_lib PRIVATE --coverage -O0 -g)
+    target_link_options(chess_lib PRIVATE --coverage)
     message(STATUS "Coverage enabled (use gcov/llvm-cov)")
 endif()
 
@@ -96,6 +98,44 @@ add_custom_target(run_example
     COMMENT "Running example..."
 )
 
+if(COVERAGE)
+    add_custom_target(coverage
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        COMMAND echo "Generating coverage files..."
+        COMMAND find ${CMAKE_BINARY_DIR} -name "*.gcda" -o -name "*.gcno"
+        DEPENDS run_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running tests and generating coverage data"
+    )
+
+    find_program(LCOV lcov)
+    find_program(GENHTML genhtml)
+
+    if(LCOV AND GENHTML)
+        add_custom_target(coverage_html
+            COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+            COMMAND echo "Collecting coverage data..."
+            COMMAND ${LCOV} --capture --directory . --output-file coverage_raw.info --rc derive_function_end_line=0 --ignore-errors format,inconsistent
+            COMMAND echo "Filtering coverage data..."
+            COMMAND ${LCOV} --remove coverage_raw.info '/usr/*' '/Library/*' '*/tests/*' '*/examples/*' '*/gtest/*' '*/googletest/*' '*/.brew/*' '*/c++/*' '*/bits/*' --output-file coverage_filtered.info --rc derive_function_end_line=0 --ignore-errors format,inconsistent,unused
+            COMMAND echo "Generating HTML report..."
+            COMMAND ${GENHTML} coverage_filtered.info --output-directory coverage_html --demangle-cpp --legend --title "Non-Euclidean Chess Coverage" --rc derive_function_end_line=0 --ignore-errors source,inconsistent,category
+            COMMAND echo "========================================="
+            COMMAND echo "Coverage report: coverage_html/index.html"
+            COMMAND echo "========================================="
+            DEPENDS run_tests
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Generating HTML coverage report"
+        )
+        message(STATUS "Coverage targets available:")
+        message(STATUS "  make coverage       - Generate .gcov files")
+        message(STATUS "  make coverage_html  - Generate HTML report")
+    else()
+        message(STATUS "Coverage target available: make coverage")
+        message(STATUS "Install lcov for HTML reports: brew install lcov")
+    endif()
+endif()
+
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
     set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
@@ -106,7 +146,7 @@ if(DOXYGEN_FOUND)
     add_custom_target(docs
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen"
+        COMMENT "generating doc"
         VERBATIM
     )
 
