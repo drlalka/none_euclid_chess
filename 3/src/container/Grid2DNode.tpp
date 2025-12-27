@@ -1,5 +1,4 @@
-#ifndef GRID2DNODE_TPP
-#define GRID2DNODE_TPP
+#pragma once
 
 template<typename T>
 Grid2DNode<T>::Grid2DNode(const T& value, int x, int y)
@@ -58,6 +57,3 @@ std::vector<Grid2DNode<T>*> Grid2DNode<T>::getAllNeighbors() const {
     }
     return result;
 }
-
-#endif
-

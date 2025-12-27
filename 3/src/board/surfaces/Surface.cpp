@@ -9,9 +9,6 @@ Surface::~Surface() {
     for (auto& pair : cells) {
         delete pair.second;
     }
-    for (auto& pair : portals) {
-        delete pair.second;
-    }
 }
 
 Cell* Surface::getCell(int x, int y) {
@@ -23,11 +20,6 @@ Cell* Surface::getCell(int x, int y) {
     return nullptr;
 }
 
-std::vector<Cell*> Surface::getNeighborCells(int x, int y) const {
-    std::vector<Cell*> neighbors;
-    // Будет реализовано в наследниках
-    return neighbors;
-}
 
 ChessPiece* Surface::getPieceAt(int x, int y) const {
     auto key = std::make_pair(x, y);
@@ -40,42 +32,51 @@ ChessPiece* Surface::getPieceAt(int x, int y) const {
 
 void Surface::addPortal(int fromX, int fromY, int toSurfaceId, int toX, int toY) {
     auto key = std::make_pair(fromX, fromY);
-    PortalLink* portal = new PortalLink(toSurfaceId, toX, toY);
-    portals[key] = portal;
+    BoardPosition target(toSurfaceId, toX, toY);
+    auto portal = std::make_unique<PortalLink>(target);
 
     Cell* cell = getCell(fromX, fromY);
     if (cell != nullptr) {
-        cell->setPortalLink(portal);
+        cell->setPortalLink(std::move(portal));
     }
+
+    portals[key] = cell->getPortalLink();
 }
 
 void Surface::deletePortal(int x, int y) {
     auto key = std::make_pair(x, y);
-    auto it = portals.find(key);
-    if (it != portals.end()) {
-        delete it->second;
-        portals.erase(it);
+    portals.erase(key);
 
-        Cell* cell = getCell(x, y);
-        if (cell != nullptr) {
-            cell->setPortalLink(nullptr);
-        }
-    }
-}
-
-void Surface::addPiece(ChessPiece* piece, int x, int y) {
     Cell* cell = getCell(x, y);
     if (cell != nullptr) {
-        cell->setPiece(piece);
+        cell->setPortalLink(nullptr);
     }
 }
 
-ChessPiece* Surface::removePiece(int x, int y) {
+void Surface::addPiece(std::unique_ptr<ChessPiece> piece, int x, int y) {
+    Cell* cell = getCell(x, y);
+    if (cell != nullptr) {
+        cell->setPiece(std::move(piece));
+    }
+}
+
+std::unique_ptr<ChessPiece> Surface::removePiece(int x, int y) {
     Cell* cell = getCell(x, y);
     if (cell != nullptr) {
         return cell->removePiece();
     }
     return nullptr;
+}
+
+std::vector<ChessPiece*> Surface::getAllPieces() const {
+    std::vector<ChessPiece*> pieces;
+    for (const auto& pair : cells) {
+        ChessPiece* piece = pair.second->getPiece();
+        if (piece != nullptr) {
+            pieces.push_back(piece);
+        }
+    }
+    return pieces;
 }
 
 int Surface::getSurfaceId() const {

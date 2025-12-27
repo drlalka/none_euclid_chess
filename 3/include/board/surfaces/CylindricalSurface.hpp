@@ -1,20 +1,57 @@
-#ifndef CYLINDRICALSURFACE_HPP
-#define CYLINDRICALSURFACE_HPP
+#pragma once
 
 #include "Surface.hpp"
 
+/**
+ * @brief Cylindrical surface with wraparound edges
+ *
+ * Represents a cylinder where:
+ * - Fixed circumference (8 cells)
+ * - Variable height
+ * - X-axis wraps around (0->7->0)
+ * - Y-axis has edges (no wraparound)
+ */
 class CylindricalSurface : public Surface {
 private:
-    int circumference;
+    static constexpr int CIRCUMFERENCE = 8;
     int height;
 
 public:
-    CylindricalSurface(int surfaceId, int circumference, int height);
+    /**
+     * @brief Constructs cylindrical surface
+     * @param surfaceId Unique surface identifier
+     * @param height Cylinder height (default 8)
+     */
+    CylindricalSurface(int surfaceId, int height = 8);
 
+    /**
+     * @brief Initializes board with cylinder topology (x-axis wraparound)
+     */
     void initializeBoard() override;
-    void setupInitialPosition() override;
-    bool isValidCoordinate(int x, int y) const override;
-};
 
-#endif // CYLINDRICALSURFACE_HPP
+    /**
+     * @brief Sets up initial chess piece positions
+     */
+    void setupInitialPosition() override;
+
+    /**
+     * @brief Validates coordinates within cylinder bounds
+     * @param x Circumference coordinate (0-7, wraps)
+     * @param y Height coordinate (0 to height-1)
+     * @return true if coordinates are valid
+     */
+    bool isValidCoordinate(int x, int y) const override;
+
+    /**
+     * @brief Gets circumference dimension
+     * @return Width (8)
+     */
+    int getWidth() const override { return CIRCUMFERENCE; }
+
+    /**
+     * @brief Gets height dimension
+     * @return Height
+     */
+    int getHeight() const override { return height; }
+};
 

@@ -4,55 +4,128 @@
 #include "../../include/pieces/Bishop.hpp"
 #include "../../include/pieces/Knight.hpp"
 #include "../../include/board/GameBoard.hpp"
+#include "../../include/common/Enums.hpp"
+#include "../../include/board/surfaces/Surface.hpp"
+#include <algorithm>
 
 Pawn::Pawn(PieceColor color, const BoardPosition& position)
-    : ChessPiece(color, PieceType::PAWN, position), hasMoved(false) {
+    : ChessPiece(color, PieceType::PAWN, position), hasMoved(false)
+{
 }
 
-std::vector<Move> Pawn::getPossibleMoves(GameBoard* board) const {
+std::vector<Move> Pawn::getPossibleMoves(GameBoard* board) const
+{
     std::vector<Move> moves;
-    // TODO: Реализовать получение возможных ходов пешки
+
+    int direction = (color == PieceColor::WHITE) ? 1 : -1;
+    Surface* surface = board->getSurface(position.getSurfaceId());
+
+    if (!surface)
+    {
+        return moves;
+    }
+
+    int maxY = surface->getHeight() - 1;
+    int nextY = position.getY() + direction;
+
+    if (nextY < 0 || nextY > maxY)
+    {
+        return moves;
+    }
+
+    BoardPosition oneStep(position.getSurfaceId(), position.getX(), nextY);
+    if (!board->getPieceAt(oneStep))
+    {
+        moves.push_back(Move(position, oneStep));
+
+        if (!hasMoved)
+        {
+            int doubleY = position.getY() + 2 * direction;
+            if (doubleY >= 0 && doubleY <= maxY)
+            {
+                BoardPosition twoSteps(position.getSurfaceId(), position.getX(), doubleY);
+                BoardPosition between(position.getSurfaceId(), position.getX(), position.getY() + direction);
+                if (!board->getPieceAt(twoSteps) && !board->getPieceAt(between))
+                {
+                    moves.push_back(Move(position, twoSteps));
+                }
+            }
+        }
+    }
+
+    int leftX = position.getX() - 1;
+    int rightX = position.getX() + 1;
+    int maxX = surface->getWidth() - 1;
+
+    if (leftX >= 0)
+    {
+        BoardPosition leftCapture(position.getSurfaceId(), leftX, nextY);
+        ChessPiece* leftPiece = board->getPieceAt(leftCapture);
+        if (leftPiece && leftPiece->getColor() != color)
+        {
+            moves.push_back(Move(position, leftCapture));
+        }
+    }
+
+    if (rightX <= maxX)
+    {
+        BoardPosition rightCapture(position.getSurfaceId(), rightX, nextY);
+        ChessPiece* rightPiece = board->getPieceAt(rightCapture);
+        if (rightPiece && rightPiece->getColor() != color)
+        {
+            moves.push_back(Move(position, rightCapture));
+        }
+    }
+
+    auto cell = surface->getCell(position.getX(), position.getY());
+    if (cell && cell->hasPortal())
+    {
+        moves.push_back(Move(position, cell->getPortalDestination()));
+    }
+
     return moves;
 }
 
-bool Pawn::isValidMove(const Move& move, GameBoard* board) const {
-    // TODO: Реализовать проверку валидности хода пешки
-    return false;
+bool Pawn::isValidMove(const Move& move, GameBoard* board) const
+{
+    if (move.getFrom() != position)
+    {
+        return false;
+    }
+    auto moves = getPossibleMoves(board);
+    return std::find(moves.begin(), moves.end(), move) != moves.end();
 }
 
-int Pawn::getMaxPortalUse() const {
-    return 1; // Пешка может использовать 1 портал за ход
+int Pawn::getMaxPortalUse() const
+{
+    return 1;
 }
 
-bool Pawn::canPromote() const {
-    // TODO: Проверить, достигла ли пешка последней горизонтали
-    return false;
-}
+bool Pawn::canPromote() const
+{
+    Surface* surface = nullptr;
 
-ChessPiece* Pawn::promote(PieceType newType) {
-    ChessPiece* newPiece = nullptr;
-
-    switch (newType) {
-        case PieceType::QUEEN:
-            newPiece = new Queen(color, position);
-            break;
-        case PieceType::ROOK:
-            newPiece = new Rook(color, position);
-            break;
-        case PieceType::BISHOP:
-            newPiece = new Bishop(color, position);
-            break;
-        case PieceType::KNIGHT:
-            newPiece = new Knight(color, position);
-            break;
-        default:
-            return nullptr;
+    if (!surface)
+    {
+        return false;
     }
 
-    return newPiece;
+    if (color == PieceColor::WHITE)
+    {
+        return position.getY() == surface->getHeight() - 1;
+    }
+    else
+    {
+        return position.getY() == 0;
+    }
 }
 
-void Pawn::setMoved(bool moved) {
+bool Pawn::getHasMoved() const
+{
+    return hasMoved;
+}
+
+void Pawn::setMoved(bool moved)
+{
     hasMoved = moved;
 }
-

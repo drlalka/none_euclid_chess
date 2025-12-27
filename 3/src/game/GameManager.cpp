@@ -14,7 +14,6 @@ GameManager::GameManager()
 }
 
 GameManager::~GameManager() {
-    // Players are managed externally
 }
 
 bool GameManager::makeMove(const Move& move) {
@@ -26,13 +25,12 @@ bool GameManager::makeMove(const Move& move) {
         return false;
     }
 
-    capturedFigure = gameBoard.movePiece(move.getFrom(), move.getTo());
-    gameHistory.addMove(move, capturedFigure);
+    Move moveObj = move;
+    auto captured = gameBoard.movePiece(moveObj);
+    gameHistory.addMove(moveObj, std::move(captured));
 
-    // Switch player
     currentPlayerId = 1 - currentPlayerId;
 
-    // Calculate verdict
     currentVerdict = calculateVerdict();
 
     if (currentVerdict == GameVerdict::CHECKMATE || currentVerdict == GameVerdict::STALEMATE) {
@@ -43,8 +41,124 @@ bool GameManager::makeMove(const Move& move) {
 }
 
 bool GameManager::validateMove(const Move& move) {
-    // TODO: Реализовать полную валидацию хода
+    const BoardPosition& from = move.getFrom();
+    const BoardPosition& to = move.getTo();
+
+    ChessPiece* piece = gameBoard.getPieceAt(from);
+    if (piece == nullptr) {
+        return false;
+    }
+
+    if (players[currentPlayerId] == nullptr) {
+        return false;
+    }
+
+    if (piece->getColor() != players[currentPlayerId]->getColor()) {
+        return false;
+    }
+
+    if (from == to) {
+        return false;
+    }
+
+    if (!piece->isValidMove(move, &gameBoard)) {
+        return false;
+    }
+
+    if (!isMoveLegalConsideringCheck(move)) {
+        return false;
+    }
+
     return true;
+}
+
+bool GameManager::isMoveLegalConsideringCheck(const Move& move) {
+    const BoardPosition& from = move.getFrom();
+    const BoardPosition& to = move.getTo();
+
+    ChessPiece* movingPiece = gameBoard.getPieceAt(from);
+    if (!movingPiece) {
+        return false;
+    }
+
+    PieceColor playerColor = movingPiece->getColor();
+
+    ChessPiece* capturedPiece = gameBoard.getPieceAt(to);
+    std::unique_ptr<ChessPiece> capturedHolder;
+
+    if (capturedPiece) {
+        Surface* surface = gameBoard.getSurface(to.getSurfaceId());
+        if (surface) {
+            capturedHolder = surface->removePiece(to.getX(), to.getY());
+        }
+    }
+
+    Surface* fromSurface = gameBoard.getSurface(from.getSurfaceId());
+    Surface* toSurface = gameBoard.getSurface(to.getSurfaceId());
+
+    if (!fromSurface || !toSurface) {
+        if (capturedHolder) {
+            toSurface->addPiece(std::move(capturedHolder), to.getX(), to.getY());
+        }
+        return false;
+    }
+
+    auto movedPiece = fromSurface->removePiece(from.getX(), from.getY());
+    if (!movedPiece) {
+        if (capturedHolder) {
+            toSurface->addPiece(std::move(capturedHolder), to.getX(), to.getY());
+        }
+        return false;
+    }
+
+    BoardPosition oldPosition = movedPiece->getPosition();
+    movedPiece->moveTo(to);
+    toSurface->addPiece(std::move(movedPiece), to.getX(), to.getY());
+
+    bool isKingInCheck = false;
+    auto allPieces = gameBoard.getAllPieces();
+
+    ChessPiece* king = nullptr;
+    for (auto* p : allPieces) {
+        if (p->getColor() == playerColor && p->getType() == PieceType::KING) {
+            king = p;
+            break;
+        }
+    }
+
+    if (king) {
+        const BoardPosition& kingPos = king->getPosition();
+
+        for (auto* enemyPiece : allPieces) {
+            if (enemyPiece->getColor() == playerColor) {
+                continue;
+            }
+
+            auto moves = enemyPiece->getPossibleMoves(&gameBoard);
+            for (const auto& enemyMove : moves) {
+                if (enemyMove.getTo() == kingPos) {
+                    isKingInCheck = true;
+                    break;
+                }
+            }
+
+            if (isKingInCheck) {
+                break;
+            }
+        }
+    }
+
+    auto pieceToRestore = toSurface->removePiece(to.getX(), to.getY());
+    if (pieceToRestore) {
+        pieceToRestore->moveTo(oldPosition);
+        fromSurface->addPiece(std::move(pieceToRestore), from.getX(), from.getY());
+    }
+
+    if (capturedHolder) {
+        toSurface->addPiece(std::move(capturedHolder), to.getX(), to.getY());
+    }
+
+    return !isKingInCheck;
 }
 
 GameVerdict GameManager::calculateVerdict() {
@@ -92,7 +206,7 @@ void GameManager::loadGame(const std::string& filename) {
     file.close();
 }
 
-void GameManager::showHint(GameVerdict verdict) {
+void GameManager::showHint(GameVerdict verdict) const {
     switch (verdict) {
         case GameVerdict::CHECK:
             std::cout << "Шах!" << std::endl;
@@ -104,12 +218,11 @@ void GameManager::showHint(GameVerdict verdict) {
             std::cout << "Пат!" << std::endl;
             break;
         case GameVerdict::NONE:
-            // Нет подсказки
             break;
     }
 }
 
 ChessPiece* GameManager::getCapturedFigure() const {
-    return capturedFigure;
+    return capturedFigure.get();
 }
 

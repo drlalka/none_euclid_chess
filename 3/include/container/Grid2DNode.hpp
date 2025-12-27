@@ -1,5 +1,4 @@
-#ifndef GRID2DNODE_HPP
-#define GRID2DNODE_HPP
+#pragma once
 
 #include <array>
 #include <vector>
@@ -116,5 +115,4 @@ public:
 
 #include "../../src/container/Grid2DNode.tpp"
 
-#endif
 

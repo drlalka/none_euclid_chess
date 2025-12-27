@@ -1,5 +1,4 @@
-#ifndef GRID2DITERATOR_HPP
-#define GRID2DITERATOR_HPP
+#pragma once
 
 #include <iterator>
 #include <vector>
@@ -99,5 +98,4 @@ public:
 
 #include "../../src/container/Grid2DIterator.tpp"
 
-#endif
 

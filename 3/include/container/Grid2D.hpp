@@ -1,6 +1,4 @@
-
-#ifndef GRID2D_HPP
-#define GRID2D_HPP
+#pragma once
 
 #include <cstddef>
 #include <stdexcept>
@@ -143,12 +141,38 @@ public:
 
     /**
      * @brief Get iterator to beginning
+     * @return Iterator to first element
      */
     iterator begin();
+
+    /**
+     * @brief Get iterator to end
+     * @return Iterator past last element
+     */
     iterator end();
+
+    /**
+     * @brief Get const iterator to beginning
+     * @return Const iterator to first element
+     */
     const_iterator begin() const;
+
+    /**
+     * @brief Get const iterator to end
+     * @return Const iterator past last element
+     */
     const_iterator end() const;
+
+    /**
+     * @brief Get const iterator to beginning
+     * @return Const iterator to first element
+     */
     const_iterator cbegin() const;
+
+    /**
+     * @brief Get const iterator to end
+     * @return Const iterator past last element
+     */
     const_iterator cend() const;
 
     /**
@@ -170,4 +194,3 @@ public:
 
 #include "../../src/container/Grid2D.tpp"
 
-#endif

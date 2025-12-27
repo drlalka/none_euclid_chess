@@ -1,5 +1,4 @@
-#ifndef GRID2DITERATOR_TPP
-#define GRID2DITERATOR_TPP
+#pragma once
 
 template<typename T, bool IsConst>
 Grid2DIterator<T, IsConst>::Grid2DIterator()
@@ -63,6 +62,3 @@ template<typename T, bool IsConst>
 bool Grid2DIterator<T, IsConst>::operator!=(const Grid2DIterator& other) const {
     return !(*this == other);
 }
-
-#endif
-

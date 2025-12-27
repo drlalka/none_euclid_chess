@@ -1,5 +1,4 @@
-#ifndef GRID2D_TPP
-#define GRID2D_TPP
+#pragma once
 
 template<typename T>
 Grid2D<T>::Grid2D() : element_count(0) {}
@@ -263,6 +262,4 @@ void Grid2D<T>::deepCopy(const Grid2D& other) {
     }
 }
 
-
-#endif
 

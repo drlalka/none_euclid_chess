@@ -1,26 +1,112 @@
 #include "../../include/pieces/Rook.hpp"
 #include "../../include/board/GameBoard.hpp"
+#include "../../include/board/surfaces/Surface.hpp"
+#include <algorithm>
+#include <set>
 
 Rook::Rook(PieceColor color, const BoardPosition& position)
-    : ChessPiece(color, PieceType::ROOK, position), hasMoved(false) {
+    : ChessPiece(color, PieceType::ROOK, position), hasMoved(false)
+{
 }
 
-std::vector<Move> Rook::getPossibleMoves(GameBoard* board) const {
+std::vector<Move> Rook::getPossibleMoves(GameBoard* board) const
+{
     std::vector<Move> moves;
-    // TODO: Реализовать получение возможных ходов ладьи
+
+    Surface* surface = board->getSurface(position.getSurfaceId());
+    if (!surface)
+    {
+        return moves;
+    }
+
+    int directions[4][2] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+    for (auto& dir : directions)
+    {
+        int dx = dir[0];
+        int dy = dir[1];
+
+        std::set<std::pair<int, int>> visited;
+        visited.insert({position.getX(), position.getY()});
+
+        int currentX = position.getX();
+        int currentY = position.getY();
+
+        while (true)
+        {
+            currentX += dx;
+            currentY += dy;
+
+            if (!surface->isValidCoordinate(currentX, currentY))
+            {
+                break;
+            }
+
+            int normalizedX = currentX;
+            if (surface->getCell(currentX, currentY) == nullptr && surface->getWidth() > 0) {
+                normalizedX = ((currentX % surface->getWidth()) + surface->getWidth()) % surface->getWidth();
+                if (surface->getCell(normalizedX, currentY) == nullptr) {
+                    break;
+                }
+            }
+
+            if (visited.count({normalizedX, currentY}) > 0)
+            {
+                break;
+            }
+
+            visited.insert({normalizedX, currentY});
+
+            BoardPosition newPos(position.getSurfaceId(), normalizedX, currentY);
+            ChessPiece* targetPiece = board->getPieceAt(newPos);
+
+            auto cell = surface->getCell(normalizedX, currentY);
+            if (cell && cell->hasPortal())
+            {
+                // TODO: Implement portal logic for Rook (unlimited portals)
+                break;
+            }
+
+            if (targetPiece == nullptr)
+            {
+                moves.push_back(Move(position, newPos));
+            }
+            else
+            {
+                if (targetPiece->getColor() != color)
+                {
+                    moves.push_back(Move(position, newPos));
+                }
+                break;
+            }
+        }
+    }
+
     return moves;
 }
 
-bool Rook::isValidMove(const Move& move, GameBoard* board) const {
-    // TODO: Реализовать проверку валидности хода ладьи
-    return false;
+bool Rook::isValidMove(const Move& move, GameBoard* board) const
+{
+    if (move.getFrom() != position)
+    {
+        return false;
+    }
+
+    auto moves = getPossibleMoves(board);
+    return std::find(moves.begin(), moves.end(), move) != moves.end();
 }
 
-int Rook::getMaxPortalUse() const {
-    return -1; // Ладья может использовать неограниченное количество порталов
+int Rook::getMaxPortalUse() const
+{
+    return -1;
 }
 
-void Rook::setMoved(bool moved) {
+void Rook::setMoved(bool moved)
+{
     hasMoved = moved;
 }
 
+bool Rook::getHasMoved() const
+{
+    return hasMoved;
+}
