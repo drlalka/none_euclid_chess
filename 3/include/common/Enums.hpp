@@ -4,47 +4,47 @@
  * @brief Game state enumeration
  */
 enum class GameState {
-    NO_GAME,      ///< No game initialized
-    NEW_GAME,     ///< Game created but not started
-    IN_PROGRESS,  ///< Game in progress
-    FINISHED      ///< Game ended
+    NO_GAME,
+    NEW_GAME,
+    IN_PROGRESS,
+    FINISHED
 };
 
 /**
  * @brief Game verdict enumeration
  */
 enum class GameVerdict {
-    CHECK,      ///< King is in check
-    CHECKMATE,  ///< King is checkmated (game over)
-    STALEMATE,  ///< Stalemate (draw)
-    NONE        ///< No special state
+    CHECK,
+    CHECKMATE,
+    STALEMATE,
+    NONE
 };
 
 /**
  * @brief Chess piece color
  */
 enum class PieceColor {
-    WHITE,  ///< White pieces
-    BLACK   ///< Black pieces
+    WHITE,
+    BLACK
 };
 
 /**
  * @brief Surface topology type
  */
 enum class SurfaceType {
-    RECTANGULAR,  ///< Flat rectangular board
-    CYLINDRICAL,  ///< Cylinder (x-axis wraps)
-    SPHERICAL,    ///< Sphere (poles with rotation)
+    RECTANGULAR,
+    CYLINDRICAL,
+    SPHERICAL
 };
 
 /**
  * @brief Chess piece type
  */
 enum class PieceType {
-    KING,    ///< King piece
-    QUEEN,   ///< Queen piece
-    BISHOP,  ///< Bishop piece
-    KNIGHT,  ///< Knight piece
-    ROOK,    ///< Rook piece
-    PAWN     ///< Pawn piece
+    KING,
+    QUEEN,
+    BISHOP,
+    KNIGHT,
+    ROOK,
+    PAWN
 };

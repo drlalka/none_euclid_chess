@@ -19,51 +19,40 @@ std::vector<Move> Bishop::getPossibleMoves(GameBoard* board) const
         return moves;
     }
 
-    int directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-
-    for (auto& dir : directions)
+    Cell* startCell = surface->getCell(position.getX(), position.getY());
+    if (!startCell)
     {
-        int dx = dir[0];
-        int dy = dir[1];
+        return moves;
+    }
 
-        std::set<std::pair<int, int>> visited;
-        visited.insert({position.getX(), position.getY()});
+    Cell::Direction diagonalDirections[4] = {
+        Cell::Direction::NORTHEAST,
+        Cell::Direction::SOUTHEAST,
+        Cell::Direction::SOUTHWEST,
+        Cell::Direction::NORTHWEST
+    };
 
-        int currentX = position.getX();
-        int currentY = position.getY();
+    for (auto direction : diagonalDirections)
+    {
+        std::set<Cell*> visited;
+        visited.insert(startCell);
 
-        while (true)
+        Cell* current = startCell->getNeighbor(direction);
+
+        while (current != nullptr)
         {
-            currentX += dx;
-            currentY += dy;
-
-            if (!surface->isValidCoordinate(currentX, currentY))
+            if (visited.count(current) > 0)
             {
                 break;
             }
 
-            int normalizedX = currentX;
-            if (surface->getCell(currentX, currentY) == nullptr && surface->getWidth() > 0) {
-                normalizedX = ((currentX % surface->getWidth()) + surface->getWidth()) % surface->getWidth();
-                if (surface->getCell(normalizedX, currentY) == nullptr) {
-                    break;
-                }
-            }
+            visited.insert(current);
 
-            if (visited.count({normalizedX, currentY}) > 0)
-            {
-                break;
-            }
-
-            visited.insert({normalizedX, currentY});
-
-            BoardPosition newPos(position.getSurfaceId(), normalizedX, currentY);
+            const BoardPosition& newPos = current->getPosition();
             ChessPiece* targetPiece = board->getPieceAt(newPos);
 
-            auto cell = surface->getCell(normalizedX, currentY);
-            if (cell && cell->hasPortal())
+            if (current->hasPortal())
             {
-                // TODO: Implement portal logic for Bishop (1 portal per move)
                 break;
             }
 
@@ -79,6 +68,8 @@ std::vector<Move> Bishop::getPossibleMoves(GameBoard* board) const
                 }
                 break;
             }
+
+            current = current->getNeighbor(direction);
         }
     }
 

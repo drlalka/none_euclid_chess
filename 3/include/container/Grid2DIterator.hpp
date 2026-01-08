@@ -96,6 +96,6 @@ public:
     int getY() const { return current ? current->getY() : -1; }
 };
 
-#include "../../src/container/Grid2DIterator.tpp"
+#include "../../src/container/Grid2DIterator.tcc"
 
 

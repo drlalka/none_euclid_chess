@@ -39,9 +39,6 @@ BoardPosition BoardPosition::fromString(const std::string& str) {
     return BoardPosition(sid, x, y);
 }
 
-bool BoardPosition::operator==(const BoardPosition& other) const {
-    return equals(other);
-}
 
 bool BoardPosition::operator!=(const BoardPosition& other) const {
     return !equals(other);

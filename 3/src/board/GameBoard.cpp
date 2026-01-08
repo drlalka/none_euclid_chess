@@ -1,8 +1,5 @@
 #include "../../include/board/GameBoard.hpp"
 #include "../../include/pieces/ChessPiece.hpp"
-#include "../../include/pieces/Pawn.hpp"
-#include "../../include/pieces/Rook.hpp"
-#include "../../include/pieces/King.hpp"
 #include "../../include/board/surfaces/Surface.hpp"
 
 GameBoard::GameBoard() {
@@ -35,15 +32,7 @@ std::unique_ptr<ChessPiece> GameBoard::movePiece(Move& move) {
 
     move.setMovingPieceColor(piece->getColor());
 
-    bool hadMoved = false;
-    if (piece->getType() == PieceType::PAWN) {
-        hadMoved = static_cast<Pawn*>(piece)->getHasMoved();
-    } else if (piece->getType() == PieceType::ROOK) {
-        hadMoved = static_cast<Rook*>(piece)->getHasMoved();
-    } else if (piece->getType() == PieceType::KING) {
-        hadMoved = static_cast<King*>(piece)->getHasMoved();
-    }
-    move.setPieceHadMoved(hadMoved);
+    piece->beforeMove(move);
 
     auto capturedPiece = toSurface->removePiece(to.getX(), to.getY());
 
@@ -54,13 +43,7 @@ std::unique_ptr<ChessPiece> GameBoard::movePiece(Move& move) {
     auto movedPiece = fromSurface->removePiece(from.getX(), from.getY());
     movedPiece->moveTo(to);
 
-    if (movedPiece->getType() == PieceType::PAWN) {
-        static_cast<Pawn*>(movedPiece.get())->setMoved(true);
-    } else if (movedPiece->getType() == PieceType::ROOK) {
-        static_cast<Rook*>(movedPiece.get())->setMoved(true);
-    } else if (movedPiece->getType() == PieceType::KING) {
-        static_cast<King*>(movedPiece.get())->setMoved(true);
-    }
+    movedPiece->onMove(move);
 
     toSurface->addPiece(std::move(movedPiece), to.getX(), to.getY());
 

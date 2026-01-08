@@ -16,7 +16,7 @@ int ChessPiece::getValue() const {
         case PieceType::BISHOP: return 3;
         case PieceType::ROOK:   return 5;
         case PieceType::QUEEN:  return 9;
-        case PieceType::KING:   return 0; // Король бесценен
+        case PieceType::KING:   return 0;
         default: return 0;
     }
 }

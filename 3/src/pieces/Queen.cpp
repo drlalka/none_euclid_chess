@@ -19,54 +19,44 @@ std::vector<Move> Queen::getPossibleMoves(GameBoard* board) const
         return moves;
     }
 
-    int directions[8][2] = {
-        {0, 1}, {0, -1}, {1, 0}, {-1, 0},
-        {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+    Cell* startCell = surface->getCell(position.getX(), position.getY());
+    if (!startCell)
+    {
+        return moves;
+    }
+
+    Cell::Direction allDirections[8] = {
+        Cell::Direction::NORTH,
+        Cell::Direction::NORTHEAST,
+        Cell::Direction::EAST,
+        Cell::Direction::SOUTHEAST,
+        Cell::Direction::SOUTH,
+        Cell::Direction::SOUTHWEST,
+        Cell::Direction::WEST,
+        Cell::Direction::NORTHWEST
     };
 
-    for (auto& dir : directions)
+    for (auto direction : allDirections)
     {
-        int dx = dir[0];
-        int dy = dir[1];
+        std::set<Cell*> visited;
+        visited.insert(startCell);
 
-        std::set<std::pair<int, int>> visited;
-        visited.insert({position.getX(), position.getY()});
+        Cell* current = startCell->getNeighbor(direction);
 
-        int currentX = position.getX();
-        int currentY = position.getY();
-
-        while (true)
+        while (current != nullptr)
         {
-            currentX += dx;
-            currentY += dy;
-
-            if (!surface->isValidCoordinate(currentX, currentY))
+            if (visited.count(current) > 0)
             {
                 break;
             }
 
-            int normalizedX = currentX;
-            if (surface->getCell(currentX, currentY) == nullptr && surface->getWidth() > 0) {
-                normalizedX = ((currentX % surface->getWidth()) + surface->getWidth()) % surface->getWidth();
-                if (surface->getCell(normalizedX, currentY) == nullptr) {
-                    break;
-                }
-            }
+            visited.insert(current);
 
-            if (visited.count({normalizedX, currentY}) > 0)
-            {
-                break;
-            }
-
-            visited.insert({normalizedX, currentY});
-
-            BoardPosition newPos(position.getSurfaceId(), normalizedX, currentY);
+            const BoardPosition& newPos = current->getPosition();
             ChessPiece* targetPiece = board->getPieceAt(newPos);
 
-            auto cell = surface->getCell(normalizedX, currentY);
-            if (cell && cell->hasPortal())
+            if (current->hasPortal())
             {
-                // TODO: Implement portal logic for Queen (1 portal per move)
                 break;
             }
 
@@ -82,6 +72,8 @@ std::vector<Move> Queen::getPossibleMoves(GameBoard* board) const
                 }
                 break;
             }
+
+            current = current->getNeighbor(direction);
         }
     }
 

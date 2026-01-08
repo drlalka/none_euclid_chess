@@ -1,0 +1,108 @@
+#include "../../../include/board/surfaces/StandardSurface.hpp"
+#include "../../../include/board/Cell.hpp"
+#include "../../../include/pieces/King.hpp"
+#include "../../../include/pieces/Queen.hpp"
+#include "../../../include/pieces/Rook.hpp"
+#include "../../../include/pieces/Bishop.hpp"
+#include "../../../include/pieces/Knight.hpp"
+#include "../../../include/pieces/Pawn.hpp"
+#include <stdexcept>
+
+StandardSurface::StandardSurface(int surfaceId, int width, int height)
+    : Surface(surfaceId, SurfaceType::RECTANGULAR), width(width), height(height) {
+
+    if (width < 8 || width % 2 != 0) {
+        throw std::invalid_argument("Width must be even and >= 8");
+    }
+    if (height < 8 || height % 2 != 0) {
+        throw std::invalid_argument("Height must be even and >= 8");
+    }
+}
+
+void StandardSurface::initializeBoard() {
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            BoardPosition pos(surfaceId, x, y);
+            Cell* cell = new Cell(pos);
+            cells[std::make_pair(x, y)] = cell;
+        }
+    }
+
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            Cell* cell = cells[std::make_pair(x, y)];
+
+            if (x > 0) cell->setNeighbor(Cell::Direction::WEST, cells[std::make_pair(x - 1, y)]);
+            if (y > 0) cell->setNeighbor(Cell::Direction::SOUTH, cells[std::make_pair(x, y - 1)]);
+            if (x < width - 1) cell->setNeighbor(Cell::Direction::EAST, cells[std::make_pair(x + 1, y)]);
+            if (y < height - 1) cell->setNeighbor(Cell::Direction::NORTH, cells[std::make_pair(x, y + 1)]);
+
+            if (x > 0 && y > 0) cell->setNeighbor(Cell::Direction::SOUTHWEST, cells[std::make_pair(x - 1, y - 1)]);
+            if (x < width - 1 && y > 0) cell->setNeighbor(Cell::Direction::SOUTHEAST, cells[std::make_pair(x + 1, y - 1)]);
+            if (x < width - 1 && y < height - 1) cell->setNeighbor(Cell::Direction::NORTHEAST, cells[std::make_pair(x + 1, y + 1)]);
+            if (x > 0 && y < height - 1) cell->setNeighbor(Cell::Direction::NORTHWEST, cells[std::make_pair(x - 1, y + 1)]);
+        }
+    }
+}
+
+void StandardSurface::setupInitialPosition() {
+    for (int x = 0; x < width; x++) {
+        switch (x % 8) {
+            case 0:
+            case 7:
+                cells[std::make_pair(x, 0)]->setPiece(
+                    std::make_unique<Rook>(PieceColor::WHITE, BoardPosition(surfaceId, x, 0))
+                );
+                cells[std::make_pair(x, height - 1)]->setPiece(
+                    std::make_unique<Rook>(PieceColor::BLACK, BoardPosition(surfaceId, x, height - 1))
+                );
+                break;
+            case 1:
+            case 6:
+                cells[std::make_pair(x, 0)]->setPiece(
+                    std::make_unique<Knight>(PieceColor::WHITE, BoardPosition(surfaceId, x, 0))
+                );
+                cells[std::make_pair(x, height - 1)]->setPiece(
+                    std::make_unique<Knight>(PieceColor::BLACK, BoardPosition(surfaceId, x, height - 1))
+                );
+                break;
+            case 2:
+            case 5:
+                cells[std::make_pair(x, 0)]->setPiece(
+                    std::make_unique<Bishop>(PieceColor::WHITE, BoardPosition(surfaceId, x, 0))
+                );
+                cells[std::make_pair(x, height - 1)]->setPiece(
+                    std::make_unique<Bishop>(PieceColor::BLACK, BoardPosition(surfaceId, x, height - 1))
+                );
+                break;
+            case 3:
+                cells[std::make_pair(x, 0)]->setPiece(
+                    std::make_unique<Queen>(PieceColor::WHITE, BoardPosition(surfaceId, x, 0))
+                );
+                cells[std::make_pair(x, height - 1)]->setPiece(
+                    std::make_unique<Queen>(PieceColor::BLACK, BoardPosition(surfaceId, x, height - 1))
+                );
+                break;
+            case 4:
+                cells[std::make_pair(x, 0)]->setPiece(
+                    std::make_unique<King>(PieceColor::WHITE, BoardPosition(surfaceId, x, 0))
+                );
+                cells[std::make_pair(x, height - 1)]->setPiece(
+                    std::make_unique<King>(PieceColor::BLACK, BoardPosition(surfaceId, x, height - 1))
+                );
+                break;
+        }
+
+        cells[std::make_pair(x, 1)]->setPiece(
+            std::make_unique<Pawn>(PieceColor::WHITE, BoardPosition(surfaceId, x, 1))
+        );
+        cells[std::make_pair(x, height - 2)]->setPiece(
+            std::make_unique<Pawn>(PieceColor::BLACK, BoardPosition(surfaceId, x, height - 2))
+        );
+    }
+}
+
+bool StandardSurface::isValidCoordinate(int x, int y) const {
+    return x >= 0 && x < width && y >= 0 && y < height;
+}
+

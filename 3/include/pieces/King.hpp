@@ -72,5 +72,17 @@ public:
      * @return true if king is in check
      */
     bool getIsInCheck() const;
+
+    /**
+     * @brief Called when king is moved
+     * @param move Move that was made
+     */
+    void onMove(const Move& move) override;
+
+    /**
+     * @brief Called before move to store state
+     * @param move Move object to update
+     */
+    void beforeMove(Move& move) const override;
 };
 

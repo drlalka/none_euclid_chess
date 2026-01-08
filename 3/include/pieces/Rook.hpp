@@ -52,5 +52,17 @@ public:
      * @return true if rook has moved
      */
     bool getHasMoved() const;
+
+    /**
+     * @brief Called when rook is moved
+     * @param move Move that was made
+     */
+    void onMove(const Move& move) override;
+
+    /**
+     * @brief Called before move to store state
+     * @param move Move object to update
+     */
+    void beforeMove(Move& move) const override;
 };
 

@@ -23,7 +23,6 @@ private:
     ChessClock chessClock;
     Player* players[2];
     ThreadedVerdictCalculator verdictCalculator;
-    std::unique_ptr<ChessPiece> capturedFigure;
 
     /**
      * @brief Checks if move is legal considering hypothetical check
@@ -82,11 +81,5 @@ public:
      * @param verdict Game verdict
      */
     void showHint(GameVerdict verdict) const;
-
-    /**
-     * @brief Gets last captured figure
-     * @return Pointer to captured piece
-     */
-    ChessPiece* getCapturedFigure() const;
 };
 

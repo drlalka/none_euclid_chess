@@ -6,9 +6,9 @@ Move::Move(const BoardPosition& from, const BoardPosition& to, bool portalUsed)
       movingPieceColor(PieceColor::WHITE),
       capturedType(PieceType::PAWN),
       hadCapture(false), pieceHadMoved(false) {
-    timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()
-    ).count();
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+    timestamp = ms.count();
 }
 
 const BoardPosition& Move::getFrom() const {
@@ -25,6 +25,10 @@ long Move::getTimestamp() const {
 
 bool Move::isPortalUsed() const {
     return portalUsed;
+}
+
+void Move::setPortalUsed(bool used) {
+    portalUsed = used;
 }
 
 void Move::setMovingPieceColor(PieceColor color) {

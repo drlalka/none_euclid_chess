@@ -18,33 +18,36 @@ std::vector<Move> King::getPossibleMoves(GameBoard* board) const
         return moves;
     }
 
-    int directions[8][2] = {
-        {0, 1}, {0, -1}, {1, 0}, {-1, 0},
-        {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+    Cell* startCell = surface->getCell(position.getX(), position.getY());
+    if (!startCell)
+    {
+        return moves;
+    }
+
+    Cell::Direction allDirections[8] = {
+        Cell::Direction::NORTH,
+        Cell::Direction::NORTHEAST,
+        Cell::Direction::EAST,
+        Cell::Direction::SOUTHEAST,
+        Cell::Direction::SOUTH,
+        Cell::Direction::SOUTHWEST,
+        Cell::Direction::WEST,
+        Cell::Direction::NORTHWEST
     };
 
-    for (auto& dir : directions)
+    for (auto direction : allDirections)
     {
-        int newX = position.getX() + dir[0];
-        int newY = position.getY() + dir[1];
-
-        if (!surface->isValidCoordinate(newX, newY))
+        Cell* neighbor = startCell->getNeighbor(direction);
+        if (neighbor == nullptr)
         {
             continue;
         }
 
-        BoardPosition newPos(position.getSurfaceId(), newX, newY);
-
-        auto cell = surface->getCell(newX, newY);
-        if (!cell) {
-            continue;
-        }
-
+        const BoardPosition& newPos = neighbor->getPosition();
         ChessPiece* targetPiece = board->getPieceAt(newPos);
 
-        if (cell->hasPortal())
+        if (neighbor->hasPortal())
         {
-            // TODO: Implement portal logic for King (1 portal per move)
             continue;
         }
 
@@ -58,7 +61,6 @@ std::vector<Move> King::getPossibleMoves(GameBoard* board) const
         }
     }
 
-    // TODO: Add castling logic if !hasMoved && !isInCheck
 
     return moves;
 }
@@ -103,3 +105,14 @@ bool King::getIsInCheck() const
 {
     return isInCheck;
 }
+
+void King::onMove(const Move& move)
+{
+    hasMoved = true;
+}
+
+void King::beforeMove(Move& move) const
+{
+    move.setPieceHadMoved(hasMoved);
+}
+

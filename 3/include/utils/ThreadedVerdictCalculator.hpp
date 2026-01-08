@@ -4,7 +4,10 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <condition_variable>
+#include <functional>
 #include "../common/Enums.hpp"
+#include "../common/BoardPosition.hpp"
 
 class GameBoard;
 class ChessPiece;
@@ -17,18 +20,40 @@ class ChessPiece;
  */
 class ThreadedVerdictCalculator {
 private:
+    static constexpr size_t DEFAULT_NUM_THREADS = 4;
+    static constexpr size_t MIN_PIECES_PER_THREAD = 1;
+
+    size_t numThreads;
     std::vector<std::thread> workerThreads;
-    std::mutex resultMutex;
     std::atomic<bool> kingInCheck;
     std::atomic<bool> hasLegalMoves;
+    std::atomic<bool> stopThreads;
+    std::atomic<size_t> activeJobs;
 
-    bool isSquareUnderAttack(GameBoard* board, int surfaceId, int x, int y, PieceColor defenderColor);
-    bool canPieceMove(ChessPiece* piece, GameBoard* board);
+    std::mutex jobMutex;
+    std::condition_variable jobCV;
+    std::vector<std::function<void()>> jobQueue;
+
+    void workerLoop();
+    void initializeThreadPool();
+    bool isSquareUnderAttack(GameBoard* board, const BoardPosition& position, PieceColor defenderColor);
     void checkPieceGroup(GameBoard* board, const std::vector<ChessPiece*>& pieces);
 
 public:
     ThreadedVerdictCalculator();
     ~ThreadedVerdictCalculator();
+
+    /**
+     * @brief Sets number of worker threads
+     * @param threads Number of threads (minimum 1)
+     */
+    void setNumThreads(size_t threads);
+
+    /**
+     * @brief Gets current number of worker threads
+     * @return Number of threads
+     */
+    size_t getNumThreads() const;
 
     /**
      * @brief Calculates game verdict using multithreading

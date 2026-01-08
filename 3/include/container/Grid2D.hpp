@@ -192,5 +192,5 @@ public:
     std::vector<Grid2DNode<T>*> getNeighborNodes(int x, int y) const;
 };
 
-#include "../../src/container/Grid2D.tpp"
+#include "../../src/container/Grid2D.tcc"
 

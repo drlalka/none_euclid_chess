@@ -9,75 +9,88 @@ Rook::Rook(PieceColor color, const BoardPosition& position)
 {
 }
 
+void exploreDirectionRecursive(
+    const BoardPosition& startPos,
+    const BoardPosition& rookOriginalPos,
+    Cell::Direction direction,
+    GameBoard* board,
+    PieceColor rookColor,
+    std::vector<Move>& moves,
+    std::set<std::pair<int, std::pair<int, int>>>& visited,
+    bool usedPortal
+) {
+    Surface* surface = board->getSurface(startPos.getSurfaceId());
+    if (!surface) return;
+
+    Cell* currentCell = surface->getCell(startPos.getX(), startPos.getY());
+    if (!currentCell) return;
+
+    Cell* next = currentCell->getNeighbor(direction);
+
+    while (next != nullptr) {
+        const BoardPosition& nextPos = next->getPosition();
+
+        if (nextPos == rookOriginalPos) break;
+
+        auto visitKey = std::make_pair(nextPos.getSurfaceId(), std::make_pair(nextPos.getX(), nextPos.getY()));
+
+        if (visited.count(visitKey)) break;
+        visited.insert(visitKey);
+
+        ChessPiece* piece = board->getPieceAt(nextPos);
+
+        if (next->hasPortal()) {
+            PortalLink* portal = next->getPortalLink();
+            if (portal && portal->isActive()) {
+                BoardPosition portalExit = portal->getDestination();
+                Move move(rookOriginalPos, portalExit);
+                move.setPortalUsed(true);
+                moves.push_back(move);
+
+                exploreDirectionRecursive(portalExit, rookOriginalPos, direction, board, rookColor, moves, visited, true);
+            }
+            break;
+        }
+
+        if (piece == nullptr) {
+            Move move(rookOriginalPos, nextPos);
+            move.setPortalUsed(usedPortal);
+            moves.push_back(move);
+        } else {
+            if (piece->getColor() != rookColor) {
+                Move move(rookOriginalPos, nextPos);
+                move.setPortalUsed(usedPortal);
+                moves.push_back(move);
+            }
+            break;
+        }
+
+        next = next->getNeighbor(direction);
+    }
+}
+
 std::vector<Move> Rook::getPossibleMoves(GameBoard* board) const
 {
     std::vector<Move> moves;
+    std::set<std::pair<int, std::pair<int, int>>> uniqueDestinations;
 
-    Surface* surface = board->getSurface(position.getSurfaceId());
-    if (!surface)
-    {
-        return moves;
-    }
+    Cell::Direction directions[4] = {
+        Cell::Direction::NORTH,
+        Cell::Direction::SOUTH,
+        Cell::Direction::EAST,
+        Cell::Direction::WEST
+    };
 
-    int directions[4][2] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+    for (auto direction : directions) {
+        std::set<std::pair<int, std::pair<int, int>>> visited;
+        std::vector<Move> dirMoves;
+        exploreDirectionRecursive(position, position, direction, board, color, dirMoves, visited, false);
 
-    for (auto& dir : directions)
-    {
-        int dx = dir[0];
-        int dy = dir[1];
-
-        std::set<std::pair<int, int>> visited;
-        visited.insert({position.getX(), position.getY()});
-
-        int currentX = position.getX();
-        int currentY = position.getY();
-
-        while (true)
-        {
-            currentX += dx;
-            currentY += dy;
-
-            if (!surface->isValidCoordinate(currentX, currentY))
-            {
-                break;
-            }
-
-            int normalizedX = currentX;
-            if (surface->getCell(currentX, currentY) == nullptr && surface->getWidth() > 0) {
-                normalizedX = ((currentX % surface->getWidth()) + surface->getWidth()) % surface->getWidth();
-                if (surface->getCell(normalizedX, currentY) == nullptr) {
-                    break;
-                }
-            }
-
-            if (visited.count({normalizedX, currentY}) > 0)
-            {
-                break;
-            }
-
-            visited.insert({normalizedX, currentY});
-
-            BoardPosition newPos(position.getSurfaceId(), normalizedX, currentY);
-            ChessPiece* targetPiece = board->getPieceAt(newPos);
-
-            auto cell = surface->getCell(normalizedX, currentY);
-            if (cell && cell->hasPortal())
-            {
-                // TODO: Implement portal logic for Rook (unlimited portals)
-                break;
-            }
-
-            if (targetPiece == nullptr)
-            {
-                moves.push_back(Move(position, newPos));
-            }
-            else
-            {
-                if (targetPiece->getColor() != color)
-                {
-                    moves.push_back(Move(position, newPos));
-                }
-                break;
+        for (const auto& move : dirMoves) {
+            auto destKey = std::make_pair(move.getTo().getSurfaceId(),
+                                         std::make_pair(move.getTo().getX(), move.getTo().getY()));
+            if (uniqueDestinations.insert(destKey).second) {
+                moves.push_back(move);
             }
         }
     }
@@ -110,3 +123,14 @@ bool Rook::getHasMoved() const
 {
     return hasMoved;
 }
+
+void Rook::onMove(const Move& move)
+{
+    hasMoved = true;
+}
+
+void Rook::beforeMove(Move& move) const
+{
+    move.setPieceHadMoved(hasMoved);
+}
+

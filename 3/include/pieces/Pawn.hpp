@@ -66,6 +66,18 @@ public:
      * @return true if pawn has moved
      */
     bool getHasMoved() const;
+
+    /**
+     * @brief Called when pawn is moved
+     * @param move Move that was made
+     */
+    void onMove(const Move& move) override;
+
+    /**
+     * @brief Called before move to store state
+     * @param move Move object to update
+     */
+    void beforeMove(Move& move) const override;
 };
 
 

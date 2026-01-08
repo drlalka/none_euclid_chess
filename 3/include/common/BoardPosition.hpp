@@ -51,6 +51,15 @@ public:
     bool equals(const BoardPosition& other) const;
 
     /**
+     * @brief Equality operator
+     * @param other Other position
+     * @return true if positions are equal
+     */
+    bool operator==(const BoardPosition& other) const {
+        return equals(other);
+    }
+
+    /**
      * @brief Checks if position is valid
      * @return true if position has valid coordinates
      */
@@ -69,10 +78,6 @@ public:
      */
     static BoardPosition fromString(const std::string& str);
 
-    /**
-     * @brief Equality operator
-     */
-    bool operator==(const BoardPosition& other) const;
 
     /**
      * @brief Inequality operator

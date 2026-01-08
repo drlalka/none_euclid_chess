@@ -113,6 +113,6 @@ public:
     std::vector<Grid2DNode*> getAllNeighbors() const;
 };
 
-#include "../../src/container/Grid2DNode.tpp"
+#include "../../src/container/Grid2DNode.tcc"
 
 

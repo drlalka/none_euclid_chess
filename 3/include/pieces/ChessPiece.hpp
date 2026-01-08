@@ -76,6 +76,18 @@ public:
      * @param newPosition Target position
      */
     void moveTo(const BoardPosition& newPosition);
+
+    /**
+     * @brief Called when piece is moved (observer pattern)
+     * @param move Move that was made
+     */
+    virtual void onMove(const Move& move) {}
+
+    /**
+     * @brief Called before move to store state in Move object
+     * @param move Move object to update
+     */
+    virtual void beforeMove(Move& move) const {}
 };
 
 

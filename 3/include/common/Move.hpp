@@ -51,6 +51,12 @@ public:
     bool isPortalUsed() const;
 
     /**
+     * @brief Sets whether portal was used
+     * @param used true if portal was used
+     */
+    void setPortalUsed(bool used);
+
+    /**
      * @brief Sets color of moving piece
      * @param color Piece color
      */

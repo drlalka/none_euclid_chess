@@ -1,37 +1,55 @@
-# Compiled binaries
 build/
-
-# Compiled object files
+cmake-build-*/
 *.o
 *.obj
-
-# Compiled executable files
+*.a
 *.exe
 *.out
-test_grid2d
-test_cylindrical
+test_*
+*_test
 grid_example
-
-# CMake
+cylindrical_chess_game
+benchmark
+validation_test
+*.gcda
+*.gcno
+*.gcov
+coverage.info
+coverage_raw.info
+coverage_filtered.info
+coverage_html/
+coverage_report/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 *.cmake
+!CMakeLists.txt
 CTestTestfile.cmake
 Testing/
-
-# IDE
+Makefile
+compile_commands.json
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
+docs/
+Doxyfile
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
-
-# OS
+.clangd/
+.cache/
 .DS_Store
 Thumbs.db
-
-# Temporary files
+*.DS_Store
 *.tmp
 *.log
+*.csv
+savegame.txt
+game_*.txt
+benchmark_comparison.png
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
 

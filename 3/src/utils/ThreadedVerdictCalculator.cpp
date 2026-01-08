@@ -1,18 +1,63 @@
 #include "../../include/utils/ThreadedVerdictCalculator.hpp"
 #include "../../include/board/GameBoard.hpp"
 #include "../../include/pieces/ChessPiece.hpp"
-#include "../../include/pieces/King.hpp"
 #include <algorithm>
+#include <chrono>
+#include <iostream>
 
 ThreadedVerdictCalculator::ThreadedVerdictCalculator()
-    : kingInCheck(false), hasLegalMoves(false) {
+    : numThreads(4), kingInCheck(false), hasLegalMoves(false), stopThreads(false), activeJobs(0) {
+    initializeThreadPool();
 }
 
 ThreadedVerdictCalculator::~ThreadedVerdictCalculator() {
     shutdown();
 }
 
-bool ThreadedVerdictCalculator::isSquareUnderAttack(GameBoard* board, int surfaceId, int x, int y, PieceColor defenderColor) {
+void ThreadedVerdictCalculator::initializeThreadPool() {
+    stopThreads.store(false);
+    for (size_t i = 0; i < numThreads; i++) {
+        workerThreads.emplace_back(&ThreadedVerdictCalculator::workerLoop, this);
+    }
+}
+
+void ThreadedVerdictCalculator::workerLoop() {
+    while (true) {
+        std::function<void()> job;
+        {
+            std::unique_lock<std::mutex> lock(jobMutex);
+            jobCV.wait(lock, [this] { return stopThreads.load() || !jobQueue.empty(); });
+
+            if (stopThreads.load() && jobQueue.empty()) {
+                return;
+            }
+
+            if (!jobQueue.empty()) {
+                job = std::move(jobQueue.back());
+                jobQueue.pop_back();
+            }
+        }
+
+        if (job) {
+            job();
+            activeJobs.fetch_sub(1);
+        }
+    }
+}
+
+void ThreadedVerdictCalculator::setNumThreads(size_t threads) {
+    if (threads == numThreads) return;
+
+    shutdown();
+    numThreads = std::max(size_t(1), threads);
+    initializeThreadPool();
+}
+
+size_t ThreadedVerdictCalculator::getNumThreads() const {
+    return numThreads;
+}
+
+bool ThreadedVerdictCalculator::isSquareUnderAttack(GameBoard* board, const BoardPosition& position, PieceColor defenderColor) {
     auto allPieces = board->getAllPieces();
 
     for (auto* piece : allPieces) {
@@ -22,9 +67,7 @@ bool ThreadedVerdictCalculator::isSquareUnderAttack(GameBoard* board, int surfac
 
         auto moves = piece->getPossibleMoves(board);
         for (const auto& move : moves) {
-            if (move.getTo().getSurfaceId() == surfaceId &&
-                move.getTo().getX() == x &&
-                move.getTo().getY() == y) {
+            if (move.getTo() == position) {
                 return true;
             }
         }
@@ -33,14 +76,10 @@ bool ThreadedVerdictCalculator::isSquareUnderAttack(GameBoard* board, int surfac
     return false;
 }
 
-bool ThreadedVerdictCalculator::canPieceMove(ChessPiece* piece, GameBoard* board) {
-    auto moves = piece->getPossibleMoves(board);
-    return !moves.empty();
-}
-
 void ThreadedVerdictCalculator::checkPieceGroup(GameBoard* board, const std::vector<ChessPiece*>& pieces) {
     for (auto* piece : pieces) {
-        if (canPieceMove(piece, board)) {
+        auto moves = piece->getPossibleMoves(board);
+        if (!moves.empty()) {
             hasLegalMoves.store(true);
             return;
         }
@@ -69,8 +108,8 @@ GameVerdict ThreadedVerdictCalculator::calculateGameState(GameBoard* board, Piec
         return GameVerdict::NONE;
     }
 
-    const auto& kingPos = king->getPosition();
-    if (isSquareUnderAttack(board, kingPos.getSurfaceId(), kingPos.getX(), kingPos.getY(), activeColor)) {
+    const BoardPosition& kingPos = king->getPosition();
+    if (isSquareUnderAttack(board, kingPos, activeColor)) {
         kingInCheck.store(true);
     }
 
@@ -81,28 +120,31 @@ GameVerdict ThreadedVerdictCalculator::calculateGameState(GameBoard* board, Piec
         }
     }
 
-    if (playerPieces.empty()) {
-        return GameVerdict::NONE;
-    }
+    size_t piecesPerThread = std::max(MIN_PIECES_PER_THREAD, playerPieces.size() / numThreads);
 
-    size_t piecesPerThread = std::max(size_t(1), playerPieces.size() / 4);
-    workerThreads.clear();
+    size_t numJobs = 0;
+    {
+        std::lock_guard<std::mutex> lock(jobMutex);
+        jobQueue.clear();
+        activeJobs.store(0);
 
-    for (size_t i = 0; i < playerPieces.size(); i += piecesPerThread) {
-        size_t end = std::min(i + piecesPerThread, playerPieces.size());
-        std::vector<ChessPiece*> group(playerPieces.begin() + i, playerPieces.begin() + end);
+        for (size_t i = 0; i < playerPieces.size(); i += piecesPerThread) {
+            size_t end = std::min(i + piecesPerThread, playerPieces.size());
+            std::vector<ChessPiece*> group(playerPieces.begin() + i, playerPieces.begin() + end);
 
-        workerThreads.emplace_back([this, board, group]() {
-            this->checkPieceGroup(board, group);
-        });
-    }
-
-    for (auto& thread : workerThreads) {
-        if (thread.joinable()) {
-            thread.join();
+            activeJobs.fetch_add(1);
+            jobQueue.push_back([this, board, group]() {
+                this->checkPieceGroup(board, group);
+            });
+            numJobs++;
         }
     }
-    workerThreads.clear();
+
+    jobCV.notify_all();
+
+    while (activeJobs.load() > 0) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
 
     bool inCheck = kingInCheck.load();
     bool hasMoves = hasLegalMoves.load();
@@ -122,6 +164,9 @@ GameVerdict ThreadedVerdictCalculator::calculateGameState(GameBoard* board, Piec
 }
 
 void ThreadedVerdictCalculator::shutdown() {
+    stopThreads.store(true);
+    jobCV.notify_all();
+
     for (auto& thread : workerThreads) {
         if (thread.joinable()) {
             thread.join();
