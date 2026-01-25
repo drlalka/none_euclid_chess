@@ -132,8 +132,24 @@ double benchmarkThreads(int numPieces, int numTests, int numThreads) {
     calc.setNumThreads(numThreads);
 
     std::vector<GameBoard*> boards;
-    for (int i = 0; i < numTests; i++) {
-        boards.push_back(createRandomBoard(numPieces, 420 + i));
+    int seed = 420;
+    int validBoards = 0;
+
+    while (validBoards < numTests) {
+        GameBoard* board = createRandomBoard(numPieces, seed++);
+        GameVerdict verdict = calc.calculateGameState(board, PieceColor::WHITE);
+
+        if (verdict == GameVerdict::NONE) {
+            boards.push_back(board);
+            validBoards++;
+        } else {
+            delete board;
+        }
+
+        if (seed > 10000) {
+            std::cerr << "Warning: Could not generate " << numTests << " NONE boards for " << numPieces << " pieces\n";
+            break;
+        }
     }
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -161,13 +177,13 @@ int main() {
     thread4 << "NumPieces,Time_ms\n";
     thread8 << "NumPieces,Time_ms\n";
 
-    for (int n = 100; n <= 5000; n += 100) {
+    for (int n = 200; n <= 2000; n += 200) {
         std::cout << "Testing " << n << " pieces..." << std::flush;
 
-        double time8 = benchmarkThreads(n, 10, 8);
-        double time1 = benchmarkThreads(n, 10, 1);
-        double time2 = benchmarkThreads(n, 10, 2);
-        double time4 = benchmarkThreads(n, 10, 4);
+        double time1 = benchmarkThreads(n, 4, 1);
+        double time2 = benchmarkThreads(n, 4, 2);
+        double time4 = benchmarkThreads(n, 4, 4);
+        double time8 = benchmarkThreads(n, 4, 8);
 
         thread1 << n << "," << time1 << "\n";
         thread2 << n << "," << time2 << "\n";

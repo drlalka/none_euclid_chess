@@ -47,7 +47,6 @@ Thumbs.db
 *.csv
 savegame.txt
 game_*.txt
-benchmark_comparison.png
 __pycache__/
 *.pyc
 *.pyo
