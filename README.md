@@ -1,32 +1,143 @@
-# Загрузка работ на git.dozen.mephi.ru
-Все работы необходимо загрузить на git.dozen.mephi.ru.
+# Non-Euclidean Chess Game
 
-Для допуска к экзамену ВСЕ сданные вами работы должны быть загружены.
+C++ implementation of chess on non-Euclidean surfaces with portal mechanics.
 
-Выгрузка работ будет проводиться программой, поэтому необходимо строго соблюдать следующий шаблон:
-- внутри репозитория каталоги называются по номеру работы (1, 2, 3);
-- исходный код доп. задания "прикладная программа" по ЛР 2 загружать в каталог 2ex;
-- исходный код доп. задания "плагин" по ЛР 3 загружать в каталог 3ex;
-- внутри каждой из директорий должен лежать код только соответствующей работы;
-- если какой-то из работ нету, то каталог с этой работой не создавайте (или оставьте пустой);
-- внутри каталогов с работами допускается наличие поддиректорий;
-- все файлы исходного кода должны иметь расширение .c .h .cpp .hpp .tcc .cc .c++ или .cxx;
-- вместе с файлами исходного кода допускается наличие прочих файлов (исходные данные, рисунки, файлы автосборки), которые имеют расширение строго НЕ из списка, приведенного выше; эти файлы не будут участвовать в проверке на плагиат;
-- в репозитории должны отсутствовать большие файлы (размер одной ЛР не должен превышать 10MB);
-- в репозитории должны отсутствовать чужие исходные коды (если пользуетесь CMake, ОБЯЗАТЕЛЬНО удаляйте директорию cmake-build-debug, так как в ней есть свои исходники);
-- для продвинутых: допускается использование сабмодулей для аггрегации кода в одном репозитории или из сторонних систем контроля версий.
+## Features
 
-Внимание!!! Для самостоятельной проверки правильности загрузки работы рекоммендуется использовать следующую команду на сервере samos.dozen.mephi.ru:
+- **Multiple surfaces**: Cylindrical and Spherical geometries
+- **Portal system**: Teleportation between surfaces
+- **Full chess rules**: Move validation, check/checkmate detection
+- **Multi-threaded verdict calculation**: Parallel checking for game state
+- **Save/Load**: Game persistence
+
+## Build
+
 ```bash
-check_oop_labs.sh <Путь к каталогу репозитория>
-```
-Например:
-```bash
-check_oop_labs.sh ~/oop2024
+mkdir build && cd build
+cmake ..
+make
 ```
 
-Шаблон для репозитория: https://git.dozen.mephi.ru/oop2024/oop2024_template, его можно скопировать или использовать в качестве шаблона чтобы точно не ошибиться.
+## Run
 
-Любые отклонения от шаблона эквивалентны отсутствию работы. Ошибочная загрузка не той работы также эквивалентна её отсутствию.
+### Play Interactively
+```bash
+./build/cylindrical_chess_game
+```
 
-Перечень работ (названия директорий): 1, 2, 2ex, 3, 3ex.
+### Watch Automated Demo (recommended!)
+```bash
+cd build
+make demo
+```
+
+Or manually:
+```bash
+cd build
+python3 ../benchmarks/demo_portals.py
+```
+
+The demo shows:
+- Standard chess moves on cylindrical surface
+- **Portal teleportation** between Cylinder ↔ Sphere
+- Movement on spherical surface after portal jump
+- Automated gameplay with commentary
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `move <surf> <x1> <y1> <surf2> <x2> <y2>` | Make a move |
+| `show [surface_id]` | Show board(s) |
+| `portals` | List all portals |
+| `save <file>` | Save game |
+| `load <file>` | Load game |
+| `help` | Show commands |
+| `quit` | Exit |
+
+## Testing
+
+```bash
+cd build
+ctest
+```
+
+Tests include:
+- Grid2D container (custom 2D graph structure)
+- Surface geometries (Cylindrical, Spherical)
+- Move validation
+- Portal mechanics
+- Verdict calculation
+
+## Benchmarks
+
+```bash
+cd build
+make benchmark
+./benchmark
+cd ../benchmarks
+python3 plot.py
+```
+
+Generates performance graph comparing 1, 2, 4, and 8 threads for verdict calculation.
+
+## Documentation
+
+```bash
+cd build
+make docs
+open docs/html/index.html
+```
+
+## Project Structure
+
+```
+3/
+├── include/          # Header files
+│   ├── board/       # Board, Cell, Surface classes
+│   ├── pieces/      # Chess piece classes
+│   ├── game/        # Game logic, Manager, History
+│   ├── common/      # Enums, Move, BoardPosition
+│   ├── container/   # Grid2D template container
+│   └── utils/       # ThreadedVerdictCalculator
+├── src/             # Implementation files
+├── tests/           # Unit tests (GTest)
+├── benchmarks/      # Performance tests
+│   ├── benchmark.cpp       # Multi-threading benchmark
+│   ├── plot.py            # Graph generator
+│   └── demo_portals.py    # Automated game demo
+└── CMakeLists.txt   # Build configuration
+```
+
+## Portal Mechanics
+
+Portals are bidirectional links between surfaces:
+
+```
+Cylinder(4,4) ↔ Sphere(4,4)
+Cylinder(3,5) ↔ Sphere(3,3)
+```
+
+When a piece moves onto a portal cell, it can optionally teleport to the connected surface.
+
+Example move through portal:
+```
+move 0 4 3 1 4 4
+```
+Moves piece from Cylinder(0, 4,3) through portal to Sphere(1, 4,4).
+
+## Architecture
+
+- **Container**: Custom `Grid2D<T>` template class (2D graph with 8-directional neighbors)
+- **Surfaces**: Abstract base with Rectangular, Cylindrical, Spherical implementations
+- **Pieces**: Polymorphic chess pieces with virtual `getPossibleMoves()`
+- **Game Manager**: Orchestrates game flow, validates moves, calculates verdicts
+- **Multi-threading**: Parallel verdict calculation divides pieces across threads
+
+## Requirements
+
+- C++17
+- CMake 3.10+
+- GTest (for testing)
+- Python 3 + matplotlib (for benchmarks/demo)
+- Doxygen (optional, for documentation)

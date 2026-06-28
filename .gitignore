@@ -1,1 +1,23 @@
+# macOS
+.DS_Store
+
+# CMake
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+CTestTestfile.cmake
+cmake_install.cmake
+Makefile
+compile_commands.json
+Testing/
+
+# Generated documentation
+docs/
+
+# IDE
 .idea/
+.vscode/
+
+# Preserve UML diagram
+!uml.png
