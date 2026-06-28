@@ -28,7 +28,6 @@ private:
     std::atomic<bool> kingInCheck;
     std::atomic<bool> hasLegalMoves;
     std::atomic<bool> stopThreads;
-    std::atomic<size_t> activeJobs;
 
     std::mutex jobMutex;
     std::condition_variable jobCV;

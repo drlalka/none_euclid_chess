@@ -6,7 +6,7 @@
 #include <iostream>
 
 ThreadedVerdictCalculator::ThreadedVerdictCalculator()
-    : numThreads(4), kingInCheck(false), hasLegalMoves(false), stopThreads(false), activeJobs(0) {
+    : numThreads(4), kingInCheck(false), hasLegalMoves(false), stopThreads(false) {
     initializeThreadPool();
 }
 
@@ -40,7 +40,6 @@ void ThreadedVerdictCalculator::workerLoop() {
 
         if (job) {
             job();
-            activeJobs.fetch_sub(1);
         }
     }
 }
@@ -120,30 +119,59 @@ GameVerdict ThreadedVerdictCalculator::calculateGameState(GameBoard* board, Piec
         }
     }
 
-    size_t piecesPerThread = std::max(MIN_PIECES_PER_THREAD, playerPieces.size() / numThreads);
-
-    size_t numJobs = 0;
-    {
-        std::lock_guard<std::mutex> lock(jobMutex);
-        jobQueue.clear();
-        activeJobs.store(0);
-
-        for (size_t i = 0; i < playerPieces.size(); i += piecesPerThread) {
-            size_t end = std::min(i + piecesPerThread, playerPieces.size());
-            std::vector<ChessPiece*> group(playerPieces.begin() + i, playerPieces.begin() + end);
-
-            activeJobs.fetch_add(1);
-            jobQueue.push_back([this, board, group]() {
-                this->checkPieceGroup(board, group);
-            });
-            numJobs++;
-        }
+    if (playerPieces.empty()) {
+        return GameVerdict::NONE;
     }
 
-    jobCV.notify_all();
+    size_t effectiveThreads = std::min(numThreads, playerPieces.size());
 
-    while (activeJobs.load() > 0) {
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    if (effectiveThreads == 1 || playerPieces.size() < 50) {
+        for (auto* piece : playerPieces) {
+            auto moves = piece->getPossibleMoves(board);
+            if (!moves.empty()) {
+                hasLegalMoves.store(true);
+                break;
+            }
+        }
+    } else {
+        size_t minPiecesPerThread = 20;
+        size_t piecesPerThread = std::max(minPiecesPerThread,
+                                         (playerPieces.size() + effectiveThreads - 1) / effectiveThreads);
+
+        std::mutex completionMutex;
+        std::condition_variable completionCV;
+        size_t completedJobs = 0;
+        size_t totalJobs = (playerPieces.size() + piecesPerThread - 1) / piecesPerThread;
+
+        {
+            std::lock_guard<std::mutex> lock(jobMutex);
+            jobQueue.clear();
+
+            for (size_t i = 0; i < playerPieces.size(); i += piecesPerThread) {
+                size_t end = std::min(i + piecesPerThread, playerPieces.size());
+
+                jobQueue.push_back([this, board, &playerPieces, i, end, &completionMutex, &completionCV, &completedJobs]() {
+                    for (size_t j = i; j < end && !hasLegalMoves.load(); ++j) {
+                        auto moves = playerPieces[j]->getPossibleMoves(board);
+                        if (!moves.empty()) {
+                            hasLegalMoves.store(true);
+                            break;
+                        }
+                    }
+
+                    std::lock_guard<std::mutex> lock(completionMutex);
+                    completedJobs++;
+                    completionCV.notify_one();
+                });
+            }
+        }
+
+        jobCV.notify_all();
+
+        std::unique_lock<std::mutex> completionLock(completionMutex);
+        completionCV.wait(completionLock, [&completedJobs, totalJobs]() {
+            return completedJobs >= totalJobs;
+        });
     }
 
     bool inCheck = kingInCheck.load();

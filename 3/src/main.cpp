@@ -137,11 +137,11 @@ int main() {
     auto sphere = std::make_unique<SphericalSurface>(1);
     sphere->initializeBoard();
 
-    cylinder->addPortal(4, 7, 1, 0, 0);
-    sphere->addPortal(0, 0, 0, 4, 7);
+    cylinder->addPortal(4, 4, 1, 4, 4);
+    sphere->addPortal(4, 4, 0, 4, 4);
 
-    cylinder->addPortal(3, 0, 1, 4, 4);
-    sphere->addPortal(4, 4, 0, 3, 0);
+    cylinder->addPortal(3, 5, 1, 3, 3);
+    sphere->addPortal(3, 3, 0, 3, 5);
 
     manager.gameBoard.addSurface(std::move(cylinder));
     manager.gameBoard.addSurface(std::move(sphere));

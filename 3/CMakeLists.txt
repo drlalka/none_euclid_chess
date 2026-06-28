@@ -140,4 +140,10 @@ if(DOXYGEN_FOUND)
     )
 endif()
 
+add_custom_target(demo
+    COMMAND ${CMAKE_COMMAND} -E echo "Running Non-Euclidean Chess Portal Demo..."
+    COMMAND python3 ${CMAKE_SOURCE_DIR}/benchmarks/demo_portals.py
+    DEPENDS cylindrical_chess_game
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
 
